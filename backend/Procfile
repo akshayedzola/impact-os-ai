@@ -1,0 +1,3 @@
+web: bench serve --port 8000
+worker: bench worker
+schedule: bench schedule

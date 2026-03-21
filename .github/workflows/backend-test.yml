@@ -1,0 +1,56 @@
+name: Backend — Frappe Tests
+
+on:
+  push:
+    branches: [main]
+    paths: [backend/**]
+  pull_request:
+    branches: [main]
+    paths: [backend/**]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_impactos
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install bench
+        run: pip install frappe-bench
+
+      - name: Setup bench
+        run: |
+          bench init --skip-redis-config-generation --frappe-branch version-15 frappe-bench
+          cd frappe-bench
+          cp -r $GITHUB_WORKSPACE/backend/apps/impact_os_ai apps/impact_os_ai
+          bench get-app apps/impact_os_ai --skip-assets
+        env:
+          CI: true
+
+      - name: Run Python linting
+        run: |
+          pip install flake8
+          flake8 backend/apps/impact_os_ai/impact_os_ai/api/ --max-line-length=120 --ignore=E501,W503
+
+      - name: Run tests
+        run: echo "Tests will be added in Phase 2"

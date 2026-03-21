@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: impactos
+      MYSQL_USER: frappe
+      MYSQL_PASSWORD: frappe
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  frappe:
+    image: frappe/erpnext:v15
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - FRAPPE_SITE_NAME=impactos.local
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - REDIS_CACHE=redis://redis:6379/0
+      - REDIS_QUEUE=redis://redis:6379/1
+      - REDIS_SOCKETIO=redis://redis:6379/2
+    ports:
+      - "8000:8000"
+    volumes:
+      - frappe_sites:/home/frappe/frappe-bench/sites
+      - ./backend/apps/impact_os_ai:/home/frappe/frappe-bench/apps/impact_os_ai
+    command: >
+      bash -c "
+        bench get-app /home/frappe/frappe-bench/apps/impact_os_ai --skip-assets 2>/dev/null || true &&
+        bench --site impactos.local install-app impact_os_ai 2>/dev/null || true &&
+        bench serve --port 8000
+      "
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    environment:
+      - FRAPPE_BASE_URL=http://frappe:8000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - frappe
+    command: npm run dev
+
+volumes:
+  mariadb_data:
+  frappe_sites:

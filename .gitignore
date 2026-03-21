@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+frontend/.env
+frontend/.env.local
+frontend/.env*.local
+
+# Frappe
+backend/sites/*/site_config.json
+backend/sites/*/private/
+backend/sites/*/public/files/
+backend/sites/*/.site_config.json.bak
+backend/logs/
+backend/config/
+*.pyc
+__pycache__/
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Testing
+coverage/
+.nyc_output
+
+# Misc
+*.pem
+.vercel
