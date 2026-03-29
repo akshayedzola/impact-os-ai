@@ -11,7 +11,11 @@ export async function POST(req: NextRequest) {
   const token = req.headers.get('authorization');
   const body = await req.json();
   const messages = body.messages ?? [];
-  const project: IProject = body.project;
+  const project: IProject | undefined = body.project;
+
+  if (!project) {
+    return new Response("Missing project in request body", { status: 400 });
+  }
 
   const projectContext = buildProjectContext(project);
   const systemPrompt = `${IMPACTOS_SYSTEM_PROMPT}\n\n## CURRENT PROJECT CONTEXT\n${projectContext}`;
